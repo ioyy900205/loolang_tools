@@ -5,13 +5,13 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="wav-loo",
-    version="1.0.2",
-    author="Your Name",
-    author_email="your.email@example.com",
+    version="1.0.3",
+    author="liuliang",
+    author_email="ioyy900205@gmail.com",
     description="A multi-tool: find WAV files, plus kgn/gp/uv alias commands",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/wav-loo",
+    url="https://github.com/ioyy900205/loolang_tools",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 3 - Alpha",

@@ -12,3 +12,5 @@ wav_loo.egg-info/dependency_links.txt
 wav_loo.egg-info/entry_points.txt
 wav_loo.egg-info/requires.txt
 wav_loo.egg-info/top_level.txt
+wav_loo/loss/__init__.py
+wav_loo/loss/multi_channel_separation_consistency_loss.py
