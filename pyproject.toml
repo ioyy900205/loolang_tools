@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wav-loo"
-version = "1.0.3"
+version = "1.0.4"
 description = "A multi-tool: find WAV files, plus kgn/gp/uv alias commands"
 readme = "README.md"
 license = {text = "MIT"}

@@ -1,6 +1,6 @@
 # WAV Loo
 
-版本：1.0.3
+版本：1.0.4
 
 `wav-loo` 是一个为音频处理和云原生开发设计的集成工具箱，它提供了三大核心功能：
 
@@ -87,7 +87,7 @@ print(wavs)
 
 **功能**:
 
-计算多通道（N>2）音频信号分离后的一致性损失。该损失旨在惩罚模型输出的多个通道之间的频谱差异与原始目标信号中对应通道之间的频谱差异不一致的情况。它通过计算所有通道对 (pair) 的预测谱图差异和目标谱图差异，然后最小化这两组差异之间的L1距离来实现。
+计算多通道（N>2）音频信号分离后的一致性损失。该损失旨在惩罚模型输出的多个通道之间的**幅度谱**差异与原始目标信号中对应通道之间的**幅度谱**差异不一致的情况。它通过计算所有通道对 (pair) 的预测幅度谱差异和目标幅度谱差异，然后最小化这两组差异之间的L1距离来实现。
 
 **使用方法**:
 
@@ -95,13 +95,13 @@ print(wavs)
 import torch
 from wav_loo.loss import multi_channel_separation_consistency_loss
 
-# 假设 pred_specs 和 target_specs 是你的模型输出和目标真值
-# 形状: (B, N, F, T), 类型: torch.cfloat
+# 假设 pred_mag_specs 和 target_mag_specs 是你的模型输出和目标真值
+# 形状: (B, N, F, T), 类型: torch.float32
 # B: batch_size, N: 通道数, F: 频率bins, T: 时间帧
-pred_specs = torch.randn(8, 4, 257, 100, dtype=torch.cfloat)
-target_specs = torch.randn(8, 4, 257, 100, dtype=torch.cfloat)
+pred_mag_specs = torch.randn(8, 4, 257, 100, dtype=torch.float32)
+target_mag_specs = torch.randn(8, 4, 257, 100, dtype=torch.float32)
 
-loss = multi_channel_separation_consistency_loss(pred_specs, target_specs)
+loss = multi_channel_separation_consistency_loss(pred_mag_specs, target_mag_specs)
 print(f"一致性损失: {loss.item()}")
 ```
 

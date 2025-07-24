@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="wav-loo",
-    version="1.0.3",
+    version="1.0.4",
     author="liuliang",
     author_email="ioyy900205@gmail.com",
     description="A multi-tool: find WAV files, plus kgn/gp/uv alias commands",
