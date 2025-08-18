@@ -1,12 +1,12 @@
 # WAV Loo
 
-版本：1.0.4
+版本：1.1.0
 
 `wav-loo` 是一个为音频处理和云原生开发设计的集成工具箱，它提供了三大核心功能：
 
 1.  **WAV 文件查找器**：在本地或远程URL中快速定位WAV音频文件。
 2.  **命令行快捷别名**：集成了数十个常用的 `kubectl`、`atlasctl` 和其他开发运维命令，提升效率。
-3.  **Loss 函数库**：提供针对音频信号处理和深度学习的专用损失函数。
+3.  **Loss 函数库 + 数据生成**：提供损失函数与车载多音区数据生成工具。
 
 ## 安装
 
@@ -107,19 +107,24 @@ print(f"一致性损失: {loss.item()}")
 
 ## 功能四：多通道车载语音数据生成
 
-生成基于车载多位置 IR（房间脉冲响应）和干净语音的多通道数据集，用于语音分离等任务。
+生成基于车载多位置 IR（房间脉冲响应）和干净语音的多音区数据集，用于语音分离等任务。
 
 - **IR 目录结构**：`ir_root` 内部递归查找子目录名包含以下关键词的文件夹，并收集其中的 `.wav` IR：
   - `zhujia`, `fujia`, `zhujiahoupai`, `fujiahoupai`（不区分大小写，名称包含即可）
-- **干净语音**：`clean_root` 内递归查找 `.wav` 文件。
+- **干净语音**：`clean_root` 内递归查找 `.wav` 文件（多通道 clean 会先混为单声道）。
 - **音区设置**：
-  - 4 音区（默认）：上述四个位置各自为一个 target。
-  - 2 音区：`zhujia`+`zhujiahoupai` 为 `zone_a`；`fujia`+`fujiahoupai` 为 `zone_b`。
-- **生成规则**：随机选择一个干净语音与每个音区对应的 IR 做卷积（FFT 卷积），得到 per-zone target；所有 target 相加得到 mixture。默认不做归一化。
-- **默认长度**：每条干净语音默认最多使用 30 秒（可通过 `--max-clean-seconds` 调整）。
-- **输出结构**：
-  - `output/mixture/mix_00000000.wav`
-  - `output/target/00000000/<zone>.wav`（zone 名随 2/4 音区而定）
+  - 4 音区（默认）：上述四个位置分别映射到输出通道 `[0,1,2,3]`。
+  - 2 音区：`zone_a=[zhujia, zhujiahoupai]` → 通道 `0`；`zone_b=[fujia, fujiahoupai]` → 通道 `1`。
+- **生成规则**：
+  - 每条样本为每个物理位置随机选一个 IR（IR 可为多通道），对 clean 做卷积；同一标签下（位置或音区）的多个子位置贡献相加。
+  - 为每个标签得到一个 `(T, N)` 贡献（当 IR 通道数不足/超出 N 时会自动 pad/截断）。
+  - 将所有标签的 `(T, N)` 堆叠后在“标签维度”求和，得到 `mixture (T, N)`。
+  - `target (T, N)` 的第 `i` 列仅保留标签 `i` 在通道 `i` 的自通道成分，便于单位置监督。
+  - 可配置 `presence_prob` 控制每个标签出现概率（默认 0.5）。
+- **默认长度**：每条干净语音默认最多使用 30 秒（`--max-clean-seconds`）。
+- **输出结构**：同目录下成对保存：
+  - `target_00000000.wav  # (T, N)`
+  - `mixture_00000000.wav # (T, N)`
 
 ### 命令行用法
 
@@ -156,13 +161,13 @@ cfg = GenerationConfig(
     random_seed=42,
     normalize=False,      # 默认不归一化
     max_clean_seconds=30.0,
+    presence_prob=0.5,
 )
 CarDataGenerator(cfg).generate()
 ```
 
 ### 数据生成依赖
-- 运行数据生成需要：`numpy`、`soundfile`（依赖系统库 `libsndfile`）。
-- pip 安装示例：`pip install soundfile`（如缺失系统库，请用包管理器安装 `libsndfile`）。
+- 运行数据生成需要：`numpy`、`soundfile`（依赖系统库 `libsndfile`）、`scipy`。
 
 ## 依赖
 - Python 3.7+
