@@ -105,7 +105,7 @@ loss = multi_channel_separation_consistency_loss(pred_mag_specs, target_mag_spec
 print(f"一致性损失: {loss.item()}")
 ```
 
-## 功能四：多通道车载语音数据生成
+## 功能四：多通道车载语音数据生成（已更新逻辑）
 
 生成基于车载多位置 IR（房间脉冲响应）和干净语音的多音区数据集，用于语音分离等任务。
 
@@ -115,22 +115,26 @@ print(f"一致性损失: {loss.item()}")
 - **音区设置**：
   - 4 音区（默认）：上述四个位置分别映射到输出通道 `[0,1,2,3]`。
   - 2 音区：`zone_a=[zhujia, zhujiahoupai]` → 通道 `0`；`zone_b=[fujia, fujiahoupai]` → 通道 `1`。
-- **生成规则**：
-  - 每条样本为每个物理位置随机选一个 IR（IR 可为多通道），对 clean 做卷积；同一标签下（位置或音区）的多个子位置贡献相加。
-  - 为每个标签得到一个 `(T, N)` 贡献（当 IR 通道数不足/超出 N 时会自动 pad/截断）。
-  - 将所有标签的 `(T, N)` 堆叠后在“标签维度”求和，得到 `mixture (T, N)`。
-  - `target (T, N)` 的第 `i` 列仅保留标签 `i` 在通道 `i` 的自通道成分，便于单位置监督。
-  - 可配置 `presence_prob` 控制每个标签出现概率（默认 0.5）。
-- **默认长度**：每条干净语音默认最多使用 30 秒（`--max-clean-seconds`）。
-- **输出结构**：同目录下成对保存：
-  - `target_00000000.wav  # (T, N)`
-  - `mixture_00000000.wav # (T, N)`
+- **生成规则（核心更新）**：
+  - 始终保留 IR 卷积后的多通道空间信息（不做单声道合并）。
+  - 2 音区/单说话人：仅从可用物理位置中随机选择一个 IR 进行卷积。
+  - 2 音区/多说话人：为每个说话人随机分配一个独立的物理位置（若人数多于位置数则循环分配），各自与对应 IR 卷积后按通道相加。
+  - 4 音区：使用该区域下所有可用 IR；各子位置与 clean 卷积后按通道相加。
+  - 当 IR 通道数与输出通道数不一致时，按输出通道数对齐（自动 pad/截断）。
+  - `mixture (T, N)`：所有标签（区域）贡献沿“标签维”求和后得到。
+  - `target (T, N)`：第 `i` 列仅保留标签 `i` 在通道 `i` 的自通道成分（便于监督）。
+- **配置参数（关键）**：
+  - `zones`：取值 `2` 或 `4`
+  - `presence_prob`：每个区域有人说话的概率（默认 0.5）
+  - `two_zone_multi_speaker_prob`：2 音区时，单个区域内出现多说话人的概率（默认 0.3）
+  - `two_zone_max_speakers_per_zone`：2 音区时，单个区域内最多说话人数（默认 2）
+  - `max_clean_seconds`：每条 clean 的最大时长（默认 30s）
+  - `sample_rate`、`num_samples` 等
 
 ### 命令行用法
 
 ```bash
 # 4 音区，默认 60000 条，16kHz，默认输出到 ./generated_car_data
-# 默认不归一化，默认每条干净语音最长 30 秒
 wav-loo gen --ir-dir /path/to/ir_root --clean-dir /path/to/clean_root
 
 # 2 音区，自定义输出与数量
@@ -141,12 +145,9 @@ wav-loo gen \
   --num-samples 2000 \
   --sample-rate 16000 \
   --output /path/to/out_dir
-
-# 开启归一化，限制每条干净语音截断到 8 秒
-wav-loo gen --ir-dir IR --clean-dir CLEAN --normalize --max-clean-seconds 8
 ```
 
-### Python API 用法
+### Python API 用法（推荐）
 
 ```python
 from wav_loo.data_gen import CarDataGenerator, GenerationConfig
@@ -157,17 +158,18 @@ cfg = GenerationConfig(
     output_dir="/path/to/out_dir",
     sample_rate=16000,
     num_samples=60000,
-    zones=4,  # 或 2
+    zones=2,  # 或 4
     random_seed=42,
-    normalize=False,      # 默认不归一化
     max_clean_seconds=30.0,
     presence_prob=0.5,
+    two_zone_multi_speaker_prob=0.3,
+    two_zone_max_speakers_per_zone=2,
 )
 CarDataGenerator(cfg).generate()
 ```
 
 ### 数据生成依赖
-- 运行数据生成需要：`numpy`、`soundfile`（依赖系统库 `libsndfile`）、`scipy`。
+- 运行数据生成需要：`numpy`、`soundfile`（依赖系统库 `libsndfile`）、`scipy`、`tqdm`。
 
 ## 依赖
 - Python 3.7+

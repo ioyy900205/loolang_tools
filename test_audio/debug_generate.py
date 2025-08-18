@@ -16,10 +16,9 @@ def main():
         clean_root_dir=str(clean_root),
         output_dir=str(out_dir),
         sample_rate=16000,
-        num_samples=3,
-        zones=4,
-        random_seed=1,
-        normalize=False,
+        num_samples=6,
+        zones=2,
+        random_seed=2,
         max_clean_seconds=30.0,
     )
 

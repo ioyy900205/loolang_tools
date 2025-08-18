@@ -18,7 +18,10 @@ def run_command(command, description):
         return result.stdout
     except subprocess.CalledProcessError as e:
         print(f"❌ {description} failed:")
-        print(f"Error: {e.stderr}")
+        if e.stdout:
+            print(e.stdout)
+        if e.stderr:
+            print(f"Error: {e.stderr}")
         return None
 
 
@@ -62,15 +65,15 @@ def main():
         choice = input("\nEnter your choice (1-3): ").strip()
         if choice == "1":
             print("\n🚀 Publishing to PyPI...")
-            if run_command("python3 -m twine upload dist/*", "Publishing to PyPI"):
+            if run_command("python3 -m twine upload --skip-existing dist/*", "Publishing to PyPI"):
                 print("\n🎉 Successfully published to PyPI!")
-                print("Your package is now available at: https://pypi.org/project/wav-lo o/")
+                print("Your package is now available at: https://pypi.org/project/wav-loo/")
             else:
                 print("❌ Publishing failed. Please check the errors above.")
             break
         elif choice == "2":
             print("\n🧪 Publishing to TestPyPI...")
-            if run_command("python3 -m twine upload --repository testpypi dist/*", "Publishing to TestPyPI"):
+            if run_command("python3 -m twine upload --skip-existing --repository testpypi dist/*", "Publishing to TestPyPI"):
                 print("\n🎉 Successfully published to TestPyPI!")
                 print("Your package is now available at: https://test.pypi.org/project/wav-loo/")
             else:

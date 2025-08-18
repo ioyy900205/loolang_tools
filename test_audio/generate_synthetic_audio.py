@@ -7,7 +7,7 @@ from array import array
 from pathlib import Path
 
 SAMPLE_RATE = 16000
-CLEAN_SECONDS = 2.0
+CLEAN_SECONDS = 30.0
 IR_SECONDS = 0.2
 AMPLITUDE = 0.2  # for clean sines
 
@@ -64,6 +64,7 @@ def gen_ir_decay(seconds: float = IR_SECONDS, sr: int = SAMPLE_RATE) -> list[int
 
 
 def gen_ir_decay_multi(seconds: float = IR_SECONDS, sr: int = SAMPLE_RATE, num_channels: int = 4) -> list[list[int]]:
+    # 4-zone: 生成4通道IR
     n = int(seconds * sr)
     channels: list[list[int]] = []
     for c in range(num_channels):
@@ -88,10 +89,10 @@ def main():
     write_wav_int16(clean_dir / 'clean1.wav', gen_sine(440.0, CLEAN_SECONDS))
     write_wav_int16(clean_dir / 'clean2.wav', gen_sine(660.0, CLEAN_SECONDS))
 
-    # IR folders matching expected zone keywords (4-channel IRs)
+    # IR folders matching expected zone keywords (4-channel IRs for 4-zone tests)
     for zone in ['zhujia', 'fujia', 'zhujiahoupai', 'fujiahoupai']:
-        write_wav_int16_multich(ir_dir / zone / 'ir1.wav', gen_ir_decay_multi())
-        write_wav_int16_multich(ir_dir / zone / 'ir2.wav', gen_ir_decay_multi())
+        write_wav_int16_multich(ir_dir / zone / 'ir1.wav', gen_ir_decay_multi(num_channels=4))
+        write_wav_int16_multich(ir_dir / zone / 'ir2.wav', gen_ir_decay_multi(num_channels=4))
 
     print(f"Clean and IR test WAVs written under: {base}")
 
