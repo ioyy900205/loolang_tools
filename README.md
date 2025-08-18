@@ -75,7 +75,7 @@ print(wavs)
 | `tb`   | `tensorboard --port=3027 --logdir=.`              | 启动tensorboard                          |
 | `ca`   | `conda activate <env>`                            | 激活conda环境（需补环境名）              |
 | `gp`   | `gpustat -i`                                      | 查看GPU状态                              |
-| `kgg`  | `kubectl get po --all-namespaces -o wide | grep ...`| 全局查找pod（需补pod名）                 |
+| `kgg`  | `kubectl get po --all-namespaces -o wide [extra args]` | 全局查看pods（可附加kubectl过滤参数） |
 | `uv`   | `uv pip install -i ...`                           | 使用unimirror安装PyPI包（需补包名）      |
 
 
@@ -104,6 +104,65 @@ target_mag_specs = torch.randn(8, 4, 257, 100, dtype=torch.float32)
 loss = multi_channel_separation_consistency_loss(pred_mag_specs, target_mag_specs)
 print(f"一致性损失: {loss.item()}")
 ```
+
+## 功能四：多通道车载语音数据生成
+
+生成基于车载多位置 IR（房间脉冲响应）和干净语音的多通道数据集，用于语音分离等任务。
+
+- **IR 目录结构**：`ir_root` 内部递归查找子目录名包含以下关键词的文件夹，并收集其中的 `.wav` IR：
+  - `zhujia`, `fujia`, `zhujiahoupai`, `fujiahoupai`（不区分大小写，名称包含即可）
+- **干净语音**：`clean_root` 内递归查找 `.wav` 文件。
+- **音区设置**：
+  - 4 音区（默认）：上述四个位置各自为一个 target。
+  - 2 音区：`zhujia`+`zhujiahoupai` 为 `zone_a`；`fujia`+`fujiahoupai` 为 `zone_b`。
+- **生成规则**：随机选择一个干净语音与每个音区对应的 IR 做卷积（FFT 卷积），得到 per-zone target；所有 target 相加得到 mixture。默认不做归一化。
+- **默认长度**：每条干净语音默认最多使用 30 秒（可通过 `--max-clean-seconds` 调整）。
+- **输出结构**：
+  - `output/mixture/mix_00000000.wav`
+  - `output/target/00000000/<zone>.wav`（zone 名随 2/4 音区而定）
+
+### 命令行用法
+
+```bash
+# 4 音区，默认 60000 条，16kHz，默认输出到 ./generated_car_data
+# 默认不归一化，默认每条干净语音最长 30 秒
+wav-loo gen --ir-dir /path/to/ir_root --clean-dir /path/to/clean_root
+
+# 2 音区，自定义输出与数量
+wav-loo gen \
+  --ir-dir /path/to/ir_root \
+  --clean-dir /path/to/clean_root \
+  --zones 2 \
+  --num-samples 2000 \
+  --sample-rate 16000 \
+  --output /path/to/out_dir
+
+# 开启归一化，限制每条干净语音截断到 8 秒
+wav-loo gen --ir-dir IR --clean-dir CLEAN --normalize --max-clean-seconds 8
+```
+
+### Python API 用法
+
+```python
+from wav_loo.data_gen import CarDataGenerator, GenerationConfig
+
+cfg = GenerationConfig(
+    ir_root_dir="/path/to/ir_root",
+    clean_root_dir="/path/to/clean_root",
+    output_dir="/path/to/out_dir",
+    sample_rate=16000,
+    num_samples=60000,
+    zones=4,  # 或 2
+    random_seed=42,
+    normalize=False,      # 默认不归一化
+    max_clean_seconds=30.0,
+)
+CarDataGenerator(cfg).generate()
+```
+
+### 数据生成依赖
+- 运行数据生成需要：`numpy`、`soundfile`（依赖系统库 `libsndfile`）。
+- pip 安装示例：`pip install soundfile`（如缺失系统库，请用包管理器安装 `libsndfile`）。
 
 ## 依赖
 - Python 3.7+
