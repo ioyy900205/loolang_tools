@@ -35,4 +35,4 @@ wav-loo = "wav_loo.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/ioyy900205/loolang_tools"
-Repository = "https://github.com/ioyy900205/loolang_tools"} 
+Repository = "https://github.com/ioyy900205/loolang_tools" 
