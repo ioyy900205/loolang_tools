@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import soundfile as sf
@@ -10,13 +10,19 @@ def scan_wavs(root: Path) -> List[Path]:
     return [p for p in root.rglob("*.wav") if p.is_file()]
 
 
-def load_clean_mono(path: Path) -> np.ndarray:
+def load_clean_mono(path: Path, max_seconds: Optional[float] = None, sr: int = 16000) -> np.ndarray:
     audio, _sr = sf.read(str(path), always_2d=True)
     if audio.shape[1] > 1:
         audio = np.mean(audio, axis=1)
     else:
         audio = audio[:, 0]
-    return audio.astype(np.float32)
+    audio = audio.astype(np.float32)
+    
+    # 如果指定了最大时长限制，则截断音频
+    if max_seconds is not None:
+        audio = truncate_audio(audio, max_seconds, sr)
+    
+    return audio
 
 
 def load_ir(path: Path) -> np.ndarray:
