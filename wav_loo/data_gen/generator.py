@@ -90,7 +90,7 @@ class CarDataGenerator:
 			random.shuffle(available_subs)
 			for i, clean_path in enumerate(clean_paths):
 				sub = available_subs[i % len(available_subs)]  # 循环分配
-				clean = load_clean_mono(clean_path)
+				clean = load_clean_mono(clean_path, max_seconds=self.config.max_clean_seconds, sr=self.config.sample_rate)
 				len_clean = clean.shape[0]
 				
 				ir_path = ir_choice.get(sub)
@@ -109,7 +109,7 @@ class CarDataGenerator:
 
 			# 只有一个说话人
 			clean_path = clean_paths[0]
-			clean = load_clean_mono(clean_path)
+			clean = load_clean_mono(clean_path, max_seconds=self.config.max_clean_seconds, sr=self.config.sample_rate)
 			len_clean = clean.shape[0]
 
 			# 与唯一的物理位置进行卷积

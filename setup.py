@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="wav-loo",
-    version="1.2.0",
+    version="1.2.1",
     author="liuliang",
     author_email="ioyy900205@gmail.com",
     description="A multi-tool: WAV finder, multi-zone data generator (2/4 zones, multi-channel IR), and CLI aliases",
