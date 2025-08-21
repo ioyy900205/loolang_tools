@@ -2,11 +2,12 @@
 
 版本：1.3.0
 
-`wav-loo` 是一个为音频处理和云原生开发设计的集成工具箱，它提供了三大核心功能：
+`wav-loo` 是一个为音频处理和云原生开发设计的集成工具箱，它提供了四大核心功能：
 
 1.  **WAV 文件查找器**：在本地或远程URL中快速定位WAV音频文件。
 2.  **命令行快捷别名**：集成了数十个常用的 `kubectl`、`atlasctl` 和其他开发运维命令，提升效率。
 3.  **Loss 函数库 + 数据生成**：提供损失函数与车载多音区数据生成工具。
+4.  **噪声训练数据切片生成**：从噪声 WAV 目录中随机抽取定长片段，保持通道与采样率，按16位保存。
 
 ## 安装
 
@@ -170,6 +171,45 @@ CarDataGenerator(cfg).generate()
 
 ### 数据生成依赖
 - 运行数据生成需要：`numpy`、`soundfile`（依赖系统库 `libsndfile`）、`scipy`、`tqdm`。
+
+## 功能五：噪声训练数据切片生成
+
+从输入目录递归扫描所有 `*.wav`，为每个文件随机抽取指定时长的片段；当音频不足时进行零填充。保持原通道数与采样率，使用 16-bit PCM 保存。动态按剩余文件平分配额，均衡覆盖各文件。
+
+### 命令行用法
+
+```bash
+wav-loo noise-seg \
+  -i /path/to/noise_wavs \
+  -o /path/to/noise_segments \
+  -d 30 \
+  -t 60000 \
+  --seed 42
+```
+
+参数说明：
+- `-i, --input`：输入目录（递归查找 WAV）
+- `-o, --output`：输出目录（默认：`noise_segments`）
+- `-d, --duration`：片段时长（秒，默认 30）
+- `-t, --total`：生成片段总数（默认 60000）
+- `--seed`：随机种子（默认 42）
+
+### Python API 用法
+
+```python
+from pathlib import Path
+from wav_loo import NoiseSegmentsConfig, generate_noise_segments
+
+cfg = NoiseSegmentsConfig(
+    input_dir=Path("/path/to/noise_wavs"),
+    output_dir=Path("/path/to/noise_segments"),
+    duration_seconds=30.0,
+    total_segments=60000,
+    random_seed=42,
+)
+num = generate_noise_segments(cfg)
+print(f"Generated: {num}")
+```
 
 ## 依赖
 - Python 3.7+
