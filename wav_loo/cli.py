@@ -105,6 +105,19 @@ def cmd_gen(args):
     gen.generate()
 
 
+def cmd_noise_seg(args):
+    from pathlib import Path
+    from .noise.segments import NoiseSegmentsConfig, generate_noise_segments
+    cfg = NoiseSegmentsConfig(
+        input_dir=Path(args.input),
+        output_dir=Path(args.output),
+        duration_seconds=args.duration,
+        total_segments=args.total,
+        random_seed=args.seed,
+    )
+    generate_noise_segments(cfg)
+
+
 def main():
     parser = argparse.ArgumentParser(description="wav-loo: multi-tool CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -191,6 +204,15 @@ def main():
     parser_gen.add_argument('--normalize', action='store_true', help='Enable peak normalization (default: disabled)')
     parser_gen.add_argument('--max-clean-seconds', type=float, default=30.0, help='Max seconds per clean clip used (default: 30)')
     parser_gen.set_defaults(func=cmd_gen)
+
+    # noise-seg subcommand
+    parser_ns = subparsers.add_parser("noise-seg", help="Generate random noise segments from WAV directory")
+    parser_ns.add_argument('--input', '-i', required=True, help='Input directory (scan recursively for WAVs)')
+    parser_ns.add_argument('--output', '-o', default='noise_segments', help='Output directory (default: noise_segments)')
+    parser_ns.add_argument('--duration', '-d', type=float, default=30.0, help='Segment duration in seconds (default: 30)')
+    parser_ns.add_argument('--total', '-t', type=int, default=60000, help='Total number of segments to generate (default: 60000)')
+    parser_ns.add_argument('--seed', type=int, default=42, help='Random seed (default: 42)')
+    parser_ns.set_defaults(func=cmd_noise_seg)
 
     # gp subcommand
     parser_gp = subparsers.add_parser("gp", help="gpustat -i")
